@@ -173,13 +173,11 @@
     template:
       src: ansible-hosts.j2
       dest: ~/ansible-hosts
-    tags: cfg
 
   - name: Create .ansible.cfg file
     template:
       src: ansible-cfg.j2
       dest: ~/.ansible.cfg
-    tags: cfg
 
   - name: Upgrade Ansible
     yum:
