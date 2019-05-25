@@ -48,6 +48,7 @@
        - xz-devel
        - expat-devel
        - postgresql-devel
+      state: latest
     become: yes
 
   - name: Download and untar Python3 source files
