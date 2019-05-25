@@ -48,6 +48,7 @@
        - xz-devel
        - expat-devel
        - postgresql-devel
+      state: latest
     become: yes
 
   - name: Download and untar Python3 source files
@@ -128,25 +129,46 @@
     pip:
       name: virtualenv
       executable: pip3
+      state: latest
     become: yes
 
   - name: Install iPython
     pip:
       name: ipython
       executable: pip3
+      state: latest
     become: yes
 
   - name: Install netmiko
     pip:
       name: netmiko
       executable: pip3
+      state: latest
     become: yes
 
   - name: Install napalm
     pip:
       name: napalm
       executable: pip3
+      state: latest
     become: yes
+
+  - name: Clone netmiko_tools
+    git:
+      repo: https://github.com/ktbyers/netmiko_tools.git
+      dest: ~/netmiko_tools
+
+  - name: Get list of netmiko_tools files
+    raw: find ~/netmiko_tools/netmiko_tools/ -type f -name "netmiko*"
+    register: netmiko_tools_files
+
+  - name: Edit netmiko-tools to use python3
+    lineinfile:
+      path: "{{ item }}"
+      state: present
+      regexp: '^#!'
+      line: '#!/usr/bin/env python3'
+    with_items: "{{ netmiko_tools_files.stdout_lines }}"
 
   - name: Clone napaml-ansible
     git:
