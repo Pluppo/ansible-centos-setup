@@ -1,0 +1,125 @@
+---
+- name: Centos7 basic setup
+  hosts: localhost
+
+  vars:
+   - python_version: '3.7.3'
+
+  tasks:
+
+  - name: Upgrade packages (except Ansible)
+    yum:
+      name: '*'
+      state: latest
+      exclude: ansible
+      update_cache: yes
+
+  - name: Install packages
+    yum:
+      name:
+       - epel-release
+       - git
+       - gcc
+       - libcurl
+       - yum-cron
+       - gzip
+       - vim-enhanced
+       - htop
+       - tree
+       - wget
+       - mtr
+       - nmap
+       - iotop
+       - net-tools
+       # Packages below are needed for building Python3 from source
+       - "@Development tools"
+       - libffi-devel
+       - zlib-devel
+       - bzip2-devel
+       - openssl-devel
+       - ncurses-devel
+       - sqlite-devel
+       - readline-devel
+       - tk-devel
+       - gdbm-devel
+       - db4-devel
+       - libpcap-devel
+       - xz-devel
+       - expat-devel
+       - postgresql-devel
+
+  - name: Download and untar Python3 source files
+    unarchive:
+      src: 'https://www.python.org/ftp/python/{{ python_version }}/Python-{{ python_version }}.tar.xz'
+      dest: /usr/src
+      remote_src: yes
+
+  - name: Configure Python
+    command: ./configure --enable-optimizations
+    args:
+      chdir: '/usr/src/Python-{{ python_version }}'
+
+  - name: Install Python
+    make:
+      chdir: '/usr/src/Python-{{ python_version }}'
+      target: altinstall
+
+  - name: Clean up source files
+    file:
+      path: '/usr/src/Python-{{ python_version }}'
+      state: absent
+
+  - name: Add /usr/local/bin to sudoers path
+    lineinfile:
+      path: /etc/sudoers
+      state: present
+      regexp: '^Defaults    secure_path'
+      line: 'Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin'
+
+  - name: Check python3 version
+    find:
+      patterns: '^python3\.[0-9]$'
+      paths: /usr/local/bin
+      use_regex: yes
+    register: python_match
+
+  - set_fact:
+      python3_version: '{{ python_match.files[0].path }}'
+
+  - name: Create python3 symlink
+    file:
+      src: '{{ python3_version }}'
+      dest: /usr/local/bin/python3
+      state: link
+
+  - name: Check pip3 version
+    find:
+      patterns: '^pip3\.[0-9]$'
+      paths: /usr/local/bin
+      use_regex: yes
+    register: pip_match
+
+  - set_fact:
+      pip3_version: '{{ pip_match.files[0].path }}'
+
+  - name: Create pip3 symlink
+    file:
+      src: '{{ pip3_version }}'
+      dest: /usr/local/bin/pip3
+      state: link
+
+  - name: Upgrade pip
+    pip:
+      name: pip
+      executable: pip3
+      state: latest
+
+  - name: Install virtualenv
+    pip:
+      name: virtualenv
+      executable: pip3
+
+  - name: Upgrade Ansible
+    yum:
+      name: ansible
+      state: latest
