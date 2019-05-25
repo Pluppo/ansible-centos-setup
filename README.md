@@ -3,7 +3,7 @@
 Instructions:
 
 ```
-sudo yum install ansible wget -y
+sudo yum install ansible git -y
 git clone https://github.com/Pluppo/ansible-centos-setup.git
 ansible-playbook ansible-centos-setup/centos.yml -K
 ```
