@@ -15,11 +15,15 @@
       update_cache: yes
     become: yes
 
+  - name: Install epel repo
+    yum:
+      name: epel-release
+    state: latest
+
   - name: Install packages
     yum:
       name:
        # Useful packages
-       - epel-release
        - wget
        - gcc
        - libcurl
