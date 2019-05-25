@@ -17,8 +17,9 @@
   - name: Install packages
     yum:
       name:
+       # Useful packages
        - epel-release
-       - git
+       - wget
        - gcc
        - libcurl
        - yum-cron
@@ -26,7 +27,6 @@
        - vim-enhanced
        - htop
        - tree
-       - wget
        - mtr
        - nmap
        - iotop
@@ -118,6 +118,12 @@
     pip:
       name: virtualenv
       executable: pip3
+
+  - name: Install iPython
+    pip:
+      name: ipython
+      executable: pip3
+    tags: ipython
 
   - name: Upgrade Ansible
     yum:
