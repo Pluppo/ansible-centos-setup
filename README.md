@@ -9,4 +9,4 @@ sudo yum install ansible wget -y
 git clone https://github.com/Pluppo/ansible-centos-setup.git
 
 3. Run playbook:
-sudo ansible-playbook ansible-centos-setup/centos.yml
+ansible-playbook ansible-centos-setup/centos.yml -K

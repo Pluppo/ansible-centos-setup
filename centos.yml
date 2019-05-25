@@ -13,6 +13,7 @@
       state: latest
       exclude: ansible
       update_cache: yes
+    become: yes
 
   - name: Install packages
     yum:
@@ -47,27 +48,32 @@
        - xz-devel
        - expat-devel
        - postgresql-devel
+    become: yes
 
   - name: Download and untar Python3 source files
     unarchive:
       src: 'https://www.python.org/ftp/python/{{ python_version }}/Python-{{ python_version }}.tar.xz'
       dest: /usr/src
       remote_src: yes
+    become: yes
 
   - name: Configure Python
     command: ./configure --enable-optimizations
     args:
       chdir: '/usr/src/Python-{{ python_version }}'
+    become: yes
 
   - name: Install Python
     make:
       chdir: '/usr/src/Python-{{ python_version }}'
       target: altinstall
+    become: yes
 
   - name: Clean up source files
     file:
       path: '/usr/src/Python-{{ python_version }}'
       state: absent
+    become: yes
 
   - name: Add /usr/local/bin to sudoers path
     lineinfile:
@@ -75,6 +81,7 @@
       state: present
       regexp: '^Defaults    secure_path'
       line: 'Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin'
+    become: yes
 
   - name: Check python3 version
     find:
@@ -91,6 +98,7 @@
       src: '{{ python3_version }}'
       dest: /usr/local/bin/python3
       state: link
+    become: yes
 
   - name: Check pip3 version
     find:
@@ -107,25 +115,74 @@
       src: '{{ pip3_version }}'
       dest: /usr/local/bin/pip3
       state: link
+    become: yes
 
   - name: Upgrade pip
     pip:
       name: pip
       executable: pip3
       state: latest
+    become: yes
 
   - name: Install virtualenv
     pip:
       name: virtualenv
       executable: pip3
+    become: yes
 
   - name: Install iPython
     pip:
       name: ipython
       executable: pip3
-    tags: ipython
+    become: yes
+
+  - name: Install netmiko
+    pip:
+      name: netmiko
+      executable: pip3
+    become: yes
+
+  - name: Install napalm
+    pip:
+      name: napalm
+      executable: pip3
+    become: yes
+
+  - name: Clone napaml-ansible
+    git:
+      repo: https://github.com/napalm-automation/napalm-ansible.git
+      dest: ~/napalm-ansible
+
+  - name: Clone ntc-ansible
+    git:
+      repo: https://github.com/networktocode/ntc-ansible.git
+      dest: ~/ntc-ansible
+
+  - name: Install ntc-ansible dependencies
+    pip:
+      name: ntc-ansible
+      executable: pip3
+    become: yes
+
+  - name: Clone ntc-templates
+    git:
+      repo: https://github.com/networktocode/ntc-templates.git
+      dest: ~/ntp-templates
+
+  - name: Create ansible-host file
+    template:
+      src: ansible-hosts.j2
+      dest: ~/ansible-hosts
+    tags: cfg
+
+  - name: Create .ansible.cfg file
+    template:
+      src: ansible-cfg.j2
+      dest: ~/.ansible.cfg
+    tags: cfg
 
   - name: Upgrade Ansible
     yum:
       name: ansible
       state: latest
+    become: yes
