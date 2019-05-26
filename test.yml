@@ -1,0 +1,15 @@
+---
+- name: TEST
+  hosts: localhost
+  tasks:
+  - name: Check pip3 version
+    find:
+      patterns: '^pip3123$'
+      file_type: file
+      paths: /usr/local/bin
+      use_regex: yes
+    register: pip3_updated
+
+  - debug:
+      msg: OK!
+    when: pip3_updated.matched == 1

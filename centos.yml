@@ -18,7 +18,7 @@
   - name: Install epel repo
     yum:
       name: epel-release
-    state: latest
+      state: latest
     become: yes
 
   - name: Install packages
@@ -37,6 +37,7 @@
        - nmap
        - iotop
        - net-tools
+       - traceroute
        # Packages below are needed for building Python3 from source
        - "@Development tools"
        - libffi-devel
@@ -56,30 +57,40 @@
       state: latest
     become: yes
 
+  - name: Check if Python3 is installed
+    command: python3 -V
+    ignore_errors: True
+    register: python3_installed
+    changed_when: False
+
   - name: Download and untar Python3 source files
     unarchive:
       src: 'https://www.python.org/ftp/python/{{ python_version }}/Python-{{ python_version }}.tar.xz'
       dest: /usr/src
       remote_src: yes
     become: yes
+    when: python3_installed.stdout is not defined
 
   - name: Configure Python
     command: ./configure --enable-optimizations
     args:
       chdir: '/usr/src/Python-{{ python_version }}'
     become: yes
+    when: python3_installed.stdout is not defined
 
   - name: Install Python
     make:
       chdir: '/usr/src/Python-{{ python_version }}'
       target: altinstall
     become: yes
+    when: python3_installed.stdout is not defined
 
   - name: Clean up source files
     file:
       path: '/usr/src/Python-{{ python_version }}'
       state: absent
     become: yes
+    when: python3_installed.stdout is not defined
 
   - name: Add /usr/local/bin to sudoers path
     lineinfile:
@@ -89,7 +100,7 @@
       line: 'Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin'
     become: yes
 
-  - name: Check python3 version
+  - name: Check python3 binary version
     find:
       patterns: '^python3\.[0-9]$'
       paths: /usr/local/bin
@@ -106,15 +117,26 @@
       state: link
     become: yes
 
+  - name: Check if pip3 exists as file
+    find:
+      patterns: '^pip3$'
+      file_type: file
+      paths: /usr/local/bin
+      use_regex: yes
+    register: pip3_exists
+
   - name: Check pip3 version
     find:
       patterns: '^pip3\.[0-9]$'
       paths: /usr/local/bin
       use_regex: yes
     register: pip_match
+    when: pip3_exists.matched == 0
 
-  - set_fact:
+  - name: Set pip3_version variable
+    set_fact:
       pip3_version: '{{ pip_match.files[0].path }}'
+    when: pip3_exists.matched == 0
 
   - name: Create pip3 symlink
     file:
@@ -122,6 +144,7 @@
       dest: /usr/local/bin/pip3
       state: link
     become: yes
+    when: pip3_exists.matched == 0
 
   - name: Upgrade pip
     pip:
@@ -162,6 +185,7 @@
     git:
       repo: https://github.com/ktbyers/netmiko_tools.git
       dest: ~/netmiko_tools
+      force: yes
 
   - name: Get list of netmiko_tools files
     raw: find ~/netmiko_tools/netmiko_tools/ -type f -name "netmiko*"
@@ -174,6 +198,15 @@
       regexp: '^#!'
       line: '#!/usr/bin/env python3'
     with_items: "{{ netmiko_tools_files.stdout_lines }}"
+
+  - name: Add netmiko-tools to PATH in .bashrc
+    lineinfile:
+      path: ~/.bashrc
+      state: present
+      regexp: 'export PATH=\$PATH:~/netmiko_tools/netmiko_tools'
+      insertafter: EOF
+      line: 'export PATH=$PATH:~/netmiko_tools/netmiko_tools'
+    tags: path
 
   - name: Clone napaml-ansible
     git:
