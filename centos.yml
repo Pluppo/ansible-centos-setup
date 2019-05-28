@@ -38,6 +38,7 @@
        - iotop
        - net-tools
        - traceroute
+       - yum-cron
        # Packages below are needed for building Python3 from source
        - "@Development tools"
        - libffi-devel
@@ -55,6 +56,21 @@
        - expat-devel
        - postgresql-devel
       state: latest
+    become: yes
+
+  - name: Configure yum-cron to apply updates
+    lineinfile:
+      path: /etc/yum/yum-cron.conf
+      state: present
+      regexp: '^apply_updates'
+      line: 'apply_updates = yes'
+    become: yes
+
+  - name: Enable and start yum-cron service
+    systemd:
+      name: yum-cron
+      enabled: yes
+      state: started
     become: yes
 
   - name: Check if Python3 is installed
@@ -191,7 +207,7 @@
     raw: find ~/netmiko_tools/netmiko_tools/ -type f -name "netmiko*"
     register: netmiko_tools_files
 
-  - name: Edit netmiko-tools to use python3
+  - name: Edit netmiko_tools to use python3
     lineinfile:
       path: "{{ item }}"
       state: present
