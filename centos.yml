@@ -197,24 +197,10 @@
       state: latest
     become: yes
 
-  - name: Clone netmiko_tools
+  - name: Clone netmiko_tools (forked to use python3)
     git:
-      repo: https://github.com/ktbyers/netmiko_tools.git
+      repo: https://github.com/Pluppo/netmiko_tools.git
       dest: /usr/local/lib/netmiko_tools
-      force: yes
-    become: yes
-
-  - name: Get list of netmiko_tools files
-    raw: find /usr/local/lib/netmiko_tools/netmiko_tools/ -type f -name "netmiko*"
-    register: netmiko_tools_files
-
-  - name: Edit netmiko_tools to use python3
-    lineinfile:
-      path: "{{ item }}"
-      state: present
-      regexp: '^#!'
-      line: '#!/usr/bin/env python3'
-    with_items: "{{ netmiko_tools_files.stdout_lines }}"
     become: yes
 
   - name: Add netmiko-tools to PATH with /etc/profile.d/path.sh
