@@ -1,0 +1,10 @@
+/var/log/ansible/ansible.log {
+    yearly
+    create 0774 root ansible
+    rotate 10
+    size 5M
+    dateext
+    dateformat -%d%m%Y
+    compress
+    delaycompress
+}

@@ -200,11 +200,12 @@
   - name: Clone netmiko_tools
     git:
       repo: https://github.com/ktbyers/netmiko_tools.git
-      dest: ~/netmiko_tools
+      dest: /usr/local/lib/netmiko_tools
       force: yes
+    become: yes
 
   - name: Get list of netmiko_tools files
-    raw: find ~/netmiko_tools/netmiko_tools/ -type f -name "netmiko*"
+    raw: find /usr/local/lib/netmiko_tools/netmiko_tools/ -type f -name "netmiko*"
     register: netmiko_tools_files
 
   - name: Edit netmiko_tools to use python3
@@ -214,25 +215,25 @@
       regexp: '^#!'
       line: '#!/usr/bin/env python3'
     with_items: "{{ netmiko_tools_files.stdout_lines }}"
+    become: yes
 
-  - name: Add netmiko-tools to PATH in .bashrc
-    lineinfile:
-      path: ~/.bashrc
-      state: present
-      regexp: 'export PATH=\$PATH:~/netmiko_tools/netmiko_tools'
-      insertafter: EOF
-      line: 'export PATH=$PATH:~/netmiko_tools/netmiko_tools'
-    tags: path
+  - name: Add netmiko-tools to PATH with /etc/profile.d/path.sh
+    template:
+      src: ./templates/path.j2
+      dest: /etc/profile.d/path.sh
+    become: yes
 
   - name: Clone napaml-ansible
     git:
       repo: https://github.com/napalm-automation/napalm-ansible.git
-      dest: ~/napalm-ansible
+      dest: /usr/local/lib/napalm-ansible
+    become: yes
 
   - name: Clone ntc-ansible
     git:
       repo: https://github.com/networktocode/ntc-ansible.git
-      dest: ~/ntc-ansible
+      dest: /usr/local/lib/ntc-ansible
+    become: yes
 
   - name: Install ntc-ansible dependencies
     pip:
@@ -243,17 +244,46 @@
   - name: Clone ntc-templates
     git:
       repo: https://github.com/networktocode/ntc-templates.git
-      dest: ~/ntp-templates
+      dest: /usr/local/lib/ntc-templates
+    become: yes
+
+  - name: Create ansible group
+    group:
+      name: ansible
+      state: present
+    become: yes
+
+  - name: Add ansible group to current user
+    user:
+      name: "{{ ansible_user_id }}"
+      groups: ansible
+      append: yes
+    become: yes
+
+  - name: Create /var/log/ansible directory
+    file:
+      path: /var/log/ansible
+      state: directory
+      mode: '0774'
+      group: ansible
+    become: yes
+
+  - name: Setup /var/log/ansible/ansible.log logrotate
+    template:
+      src: ./templates/ansible_log.j2
+      dest: /etc/logrotate.d/ansible.conf
+    become: yes
 
   - name: Create ansible-host file
     template:
-      src: ansible-hosts.j2
+      src: ./templates/ansible-hosts.j2
       dest: ~/ansible-hosts
 
-  - name: Create .ansible.cfg file
+  - name: Create ansible.cfg file
     template:
-      src: ansible-cfg.j2
-      dest: ~/.ansible.cfg
+      src: ./templates/ansible-cfg.j2
+      dest: /etc/ansible/ansible.cfg
+    become: yes
 
   - name: Upgrade Ansible
     yum:
