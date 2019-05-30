@@ -79,6 +79,10 @@
     register: python3_installed
     changed_when: False
 
+  - name: Print Python version
+    debug:
+      var: python3_installed.stdout
+
   - name: Download and untar Python3 source files
     unarchive:
       src: 'https://www.python.org/ftp/python/{{ python_version }}/Python-{{ python_version }}.tar.xz'
