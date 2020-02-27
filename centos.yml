@@ -38,7 +38,6 @@
        - iotop
        - net-tools
        - traceroute
-       - yum-cron
        # Packages below are needed for building Python3 from source
        - "@Development tools"
        - libffi-devel
